@@ -287,7 +287,7 @@ Present:
 **Changes**: [each file and what changed]
 **Blast radius**: [dependent files/modules]
 **Confidence**: High / Medium / Low (see definitions below)
-**Rollback**: `git checkout HEAD -- {files}`
+**Rollback**: `git checkout {pre_sha} -- {files}`
 ```
 
 **Confidence levels — computed from gate outcomes, not prose judgment:**
@@ -307,6 +307,8 @@ Do NOT store: obvious facts, things already in project instructions, or facts ab
 
 ### 7. Present
 
+Before presenting, capture `pre_sha`: run `git rev-parse HEAD` and store the result. This SHA is embedded in the Evidence Bundle and reused in Step 8 — it stays valid even after the commit moves HEAD forward.
+
 The user sees at most:
 1. **Pushback** (if triggered)
 2. **Boosted prompt** (only if intent changed)
@@ -322,7 +324,7 @@ For Small tasks: show the change, confirm build passed, done. Run Learn step for
 
 After presenting, automatically commit the changes. The user should never have to remember to do this.
 
-1. Capture the pre-commit SHA: `git rev-parse HEAD` → store as `{pre_sha}`
+1. Reuse `{pre_sha}` captured in Step 7 — do not re-run `git rev-parse HEAD` here (HEAD now points to the staged state).
 2. Stage all changes: `git add -A`
 3. Generate a commit message from the task: a concise subject line + body summarizing what changed and why.
 4. Include the `Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>` trailer.
