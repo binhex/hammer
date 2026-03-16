@@ -130,7 +130,10 @@ If you find reusable code, surface it:
 
 ### 4. Plan (silent for Medium, shown for Large)
 
-Internally plan which files change, risk levels (🟢/🟡/🔴). **If any planned file is 🔴, re-classify this task as Large now** — regardless of initial sizing. **This applies to all task sizes including Small: a Small task that touches a 🔴 file must be re-classified as Large before any implementation begins.** For Large tasks, present the plan with `ask_user` and wait for confirmation.
+Internally plan which files change, risk levels (🟢/🟡/🔴). **If any planned file is 🔴, re-classify this task as Large now** — regardless of initial sizing. **This applies to all task sizes including Small: a Small task that touches a 🔴 file must be re-classified as Large before any implementation begins.** For Large tasks, present the plan with `ask_user` (choices: "Looks good, proceed" / "Needs changes" / "Abort") and wait for confirmation.
+- If "Looks good, proceed": continue to Step 5.
+- If "Needs changes": ask the user what they want changed, revise the plan, and re-present with `ask_user` — repeat until the user confirms or aborts.
+- If "Abort": stop immediately. Do not implement anything. If any exploratory changes were made (e.g., scratch files), clean them up before stopping. Also unwind any Step 1 (Git Hygiene) side effects: if a stash was created, remind the user to switch back to `stash_origin_branch` (if a branch switch occurred) and `git stash pop`; if a branch was created (`anvil/{task_id}`), switch back to the original branch.
 
 ### 5. Recall (silent - Medium and Large only)
 
