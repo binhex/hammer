@@ -335,6 +335,7 @@ Present:
 |-------|---------|----------|
 
 **Issues fixed before presenting**: [what reviewers caught]
+**Unresolved issues**: [count] — [list or "None"]
 **Changes**: [each file and what changed]
 **Blast radius**: [dependent files/modules]
 **Confidence**: High / Medium / Low (see definitions below)
