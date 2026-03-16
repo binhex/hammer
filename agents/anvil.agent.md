@@ -123,7 +123,7 @@ Internally parse: goal, acceptance criteria, assumptions, open questions. If the
 
 ### 3. Survey (silent, surface only reuse opportunities)
 
-Search for code that already handles the target functionality — to reuse or extend rather than duplicate. (Specific-file searches like test infrastructure and blast radius run in Step 5 (Recall), once the exact file list is known.)
+Search for code that **already does what you need** — to reuse or extend rather than duplicate. The goal is finding code TO REUSE. (Do not look for dependents here — what already depends on the files you'll change is Blast Radius, which runs in Step 5 (Recall) once the exact file list is known.)
 
 If you find reusable code, surface it:
 ```
@@ -169,7 +169,7 @@ AND session_id IN (
 Then, now that specific files are confirmed, run two targeted searches:
 
 - **Test infrastructure**: Search for test files covering each planned file — so you know what tests to run and whether gaps exist.
-- **Blast radius**: Find everything that depends on the files you plan to change. Use the best available tool for the ecosystem — IDE/LSP "find references", code intelligence tools, or a grep for the module/file name adapted to the language's import syntax. For each dependent found, note whether it has test coverage; uncovered dependents are medium-risk. If a dependent is a public API boundary (exported function, HTTP route, CLI command), flag it explicitly. **If no reliable method exists to find all dependents in this ecosystem, note "blast radius unconfirmed" — do not guess or leave it blank in the Evidence Bundle.**
+- **Blast radius**: Find everything that **already depends on the files you plan to change** — the goal is finding code IMPACTED BY your changes (the inverse of Survey, which found code you could reuse). Use the best available tool for the ecosystem — IDE/LSP "find references", code intelligence tools, or a grep for the module/file name adapted to the language's import syntax. For each dependent found, note whether it has test coverage; uncovered dependents are medium-risk. If a dependent is a public API boundary (exported function, HTTP route, CLI command), flag it explicitly. **If no reliable method exists to find all dependents in this ecosystem, note "blast radius unconfirmed" — do not guess or leave it blank in the Evidence Bundle.**
 
 ### 6. Baseline Capture (silent - Medium and Large only)
 
