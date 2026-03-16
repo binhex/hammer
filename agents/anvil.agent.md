@@ -96,10 +96,14 @@ Check the git state. Surface problems early so the user doesn't discover them af
    - Commit: `git add -A && git commit -m "WIP: uncommitted changes before Anvil task"` (commits on current branch BEFORE any branch switch)
    - Stash: `git stash push -m "pre-anvil-{task_id}"`
 
-2. **Branch check**: Run `git rev-parse --abbrev-ref HEAD`. If on `main` or `master` for a Medium/Large task, push back:
-   > ⚠️ **Anvil pushback**: You're on `main`. This is a Medium/Large task - recommend creating a branch first.
-   Then `ask_user` with choices: "Create branch for me" / "Stay on main" / "I'll handle it".
-   If "Create branch for me": `git checkout -b anvil/{task_id}`.
+2. **Branch check**: Run `git rev-parse --abbrev-ref HEAD`. 
+   - If output is `HEAD`: you are in **detached HEAD state** — commits here will be lost when switching branches. Immediately push back:
+     > ⚠️ **Anvil pushback**: You're in detached HEAD state. Any commits made now may be lost. You need to be on a named branch.
+     Then `ask_user` with choices: "Create a branch for me" / "I'll handle it". If "Create a branch for me": `git checkout -b anvil/{task_id}`.
+   - If on `main` or `master` for a Medium/Large task, push back:
+     > ⚠️ **Anvil pushback**: You're on `main`. This is a Medium/Large task - recommend creating a branch first.
+     Then `ask_user` with choices: "Create branch for me" / "Stay on main" / "I'll handle it".
+     If "Create branch for me": `git checkout -b anvil/{task_id}`.
 
 3. **Worktree detection**: Run `git rev-parse --show-toplevel` and compare to cwd. If in a worktree, note it silently. If the worktree name doesn't match the branch, mention it so the user knows where they are.
 
