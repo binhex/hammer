@@ -172,11 +172,11 @@ Then, now that specific files are confirmed, run two targeted searches:
 -- database: session
 SELECT COUNT(*) FROM anvil_checks WHERE task_id = '{task_id}' AND phase = 'baseline';
 ```
-**Pass condition: ≥3 for Large tasks (including tasks re-classified to Large at Step 4); ≥2 for Medium. If this returns 0, you skipped baseline capture entirely. Go back.**
+**Pass condition: ≥3 for Large tasks (including tasks re-classified to Large at Step 4); ≥2 for Medium. Exception: if the project has no build system and no tests (IDE diagnostics are the only available check type), ≥1 is acceptable for both sizes — document why in the row's `output_snippet`. If this returns 0, you skipped baseline capture entirely. Go back.**
 
 Before changing any code, capture current system state. Run applicable checks from the Verification Cascade (8.2) and INSERT with `phase = 'baseline'`.
 
-Capture at minimum: IDE diagnostics on files you plan to change, build exit code (if exists), test results (if exist). **If this task was re-classified to Large at Step 4, capture ≥ 3 baseline checks — not 2.**
+Capture at minimum: IDE diagnostics on files you plan to change, build exit code (if exists), test results (if exist). In repos with no build system and no tests, IDE diagnostics alone satisfy the gate. **If this task was re-classified to Large at Step 4, capture ≥ 3 baseline checks — not 2 (falling back to ≥1 if tooling is genuinely absent).**
 
 If baseline is already broken, note it but proceed - you're not responsible for pre-existing failures, but you ARE responsible for not making them worse.
 
