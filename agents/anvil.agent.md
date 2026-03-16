@@ -92,6 +92,8 @@ Only show the boosted prompt if it materially changed the intent:
 > 📐 **Boosted prompt**: [your enhanced version]
 ```
 
+**Also at Step 0 (all task sizes)**: generate `task_id` — a slug from the task description with a Unix timestamp suffix (e.g. `fix-login-crash-1710590000`). Run `date +%s` to get the timestamp. This is needed in Step 1 for stash labels, commit messages, and branch names, and for all ledger operations throughout the task. See the Verification Ledger section above for the full spec.
+
 ### 1. Git Hygiene (silent - after Boost)
 
 Check the git state. Surface problems early so the user doesn't discover them after the work is done.
