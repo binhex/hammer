@@ -34,11 +34,11 @@ Show a `⚠️ Anvil pushback` callout, then call `ask_user` with choices ("Proc
 
 ## Task Sizing
 
-- **Small** (typo, rename, config tweak, one-liner): Implement → Quick Verify (8.1 + 8.2 only - no ledger, no adversarial review, no evidence bundle). Two escalation exceptions apply:
+- **Small** (typo, rename, config tweak, one-liner): Before implementing, identify the target file(s) and classify the change risk (🟢/🟡/🔴) — then implement → Quick Verify (8.1 + 8.2 only - no ledger, no adversarial review, no evidence bundle). Two escalation exceptions apply:
   - **Exception 1 (scope):** If the change expands beyond a single mechanical edit (touches multiple files, requires logic changes), escalate directly to **Medium** - Full Anvil Loop with **1 adversarial reviewer**, no shortcuts.
-  - **Exception 2 (risk):** If any file touched is 🔴, escalate directly to **Large** — Full Anvil Loop with **3 adversarial reviewers** + `ask_user` at Plan step, no shortcuts.
+  - **Exception 2 (risk):** If the change is 🔴, escalate directly to **Large** — Full Anvil Loop with **3 adversarial reviewers** + `ask_user` at Plan step, no shortcuts. Do this before writing any code.
 - **Medium** (bug fix, feature addition, refactor): Full Anvil Loop with **1 adversarial reviewer**. One escalation exception applies:
-  - **Exception 1 (risk):** If any file touched is 🔴, escalate directly to **Large** — Full Anvil Loop with **3 adversarial reviewers** + `ask_user` at Plan step, no shortcuts.
+  - **Exception 1 (risk):** If any planned change is 🔴, escalate directly to **Large** — Full Anvil Loop with **3 adversarial reviewers** + `ask_user` at Plan step, no shortcuts.
 - **Large** (new feature, multi-file architecture, auth/crypto/payments, OR any 🔴 files): Full Anvil Loop with **3 adversarial reviewers** + `ask_user` at Plan step, no shortcuts.
 
 If unsure, treat as Medium.
@@ -132,7 +132,7 @@ If you find reusable code, surface it:
 
 ### 4. Plan (silent for Medium, shown for Large)
 
-Internally plan which files change, risk levels (🟢/🟡/🔴). **If any planned file is 🔴, re-classify this task as Large now** — regardless of initial sizing. **This applies to all task sizes including Small: a Small task that touches a 🔴 file must be re-classified as Large before any implementation begins.** For Large tasks, present the plan with `ask_user` (choices: "Looks good, proceed" / "Needs changes" / "Abort") and wait for confirmation.
+Internally plan which files change, risk levels (🟢/🟡/🔴). **If any planned change is 🔴, re-classify this task as Large now** — regardless of initial sizing. **This applies to all task sizes including Small: a Small task whose change is classified 🔴 must be re-classified as Large before any implementation begins.** For Large tasks, present the plan with `ask_user` (choices: "Looks good, proceed" / "Needs changes" / "Abort") and wait for confirmation.
 - If "Looks good, proceed": continue to Step 5.
 - If "Needs changes": ask the user what they want changed, revise the plan, and re-present with `ask_user` — repeat until the user confirms or aborts.
 - If "Abort": stop immediately. Do not implement anything. If any exploratory changes were made (e.g., scratch files), clean them up before stopping. Also unwind any Step 1 (Git Hygiene) side effects: if a stash was created, remind the user to switch back to `stash_origin_branch` (if a branch switch occurred) and `git stash pop`; if a branch was created (`anvil/{task_id}`), switch back to the original branch.
