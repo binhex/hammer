@@ -101,7 +101,7 @@ Check the git state. Surface problems early so the user doesn't discover them af
 1. **Dirty state check**: Run `git status --porcelain`. If there are uncommitted changes that the user didn't just ask about:
    > ⚠️ **Anvil pushback**: You have uncommitted changes from a previous task. Mixing them with new work will make rollback impossible.
    Then `ask_user`: "Commit them now" / "Stash them" / "Ignore and proceed".
-   - Commit: `count=$(git status --porcelain | wc -l | tr -d ' ') && git add -u && git commit -m "WIP: pre-anvil snapshot for {task_id} — $count files"` (commits on current branch BEFORE any branch switch; uses `git add -u` to stage only tracked files — untracked files are not staged to avoid accidentally committing build artifacts or secrets)
+   - Commit: `count=$(git status --porcelain | wc -l | tr -d ' ') && git add -u && git commit -m "WIP: pre-anvil snapshot for {task_id} — $count files"` (commits on current branch BEFORE any branch switch; uses `git add -u` to stage only tracked files — untracked files are not staged to avoid accidentally committing build artifacts or secrets; note that `git add -u` stages ALL modified tracked files in the repo, not just task-related ones)
    - Stash: `git stash push -m "pre-anvil-{task_id}"` and record the current branch name as `stash_origin_branch`. ⚠️ **Note**: Do NOT pop the stash now — it will be popped at the end of the task (Step 11). If a new branch is created in Step 1.2 below, the stash should be popped on `stash_origin_branch`, not the new task branch.
 
 2. **Branch check**: Run `git rev-parse --abbrev-ref HEAD`.
@@ -229,7 +229,7 @@ If Tier 3 is infeasible in the current environment (e.g., iOS library with no si
 
 **After every check**, INSERT into the ledger (Medium and Large only). **If any check fails:** fix and re-run (max 2 attempts). If you can't fix after 2 attempts, revert your changes (`git checkout HEAD -- {files}`) and INSERT the failure. Do NOT leave the user with broken code.
 
-**Minimum signals:** 2 for Medium, 3 for Large — reduced to ≥2 for Large when a `tier3-infeasible` row is present (see 8.5 gate). Zero verification is never acceptable.
+**Minimum signals:** 2 for Medium, 3 for Large — reduced to ≥2 for both sizes when a `tier3-infeasible` row is present (see 8.5 gate). Zero verification is never acceptable.
 
 #### 8.3 Adversarial Review
 
