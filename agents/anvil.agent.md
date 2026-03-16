@@ -224,7 +224,7 @@ If Tier 3 is infeasible in the current environment (e.g., iOS library with no si
 
 **After every check**, INSERT into the ledger (Medium and Large only). **If any check fails:** fix and re-run (max 2 attempts). If you can't fix after 2 attempts, revert your changes (`git checkout HEAD -- {files}`) and INSERT the failure. Do NOT leave the user with broken code.
 
-**Minimum signals:** 2 for Medium, 3 for Large. Zero verification is never acceptable.
+**Minimum signals:** 2 for Medium, 3 for Large — reduced to ≥2 for Large when a `tier3-infeasible` row is present (see 8.5 gate). Zero verification is never acceptable.
 
 #### 8.3 Adversarial Review
 
