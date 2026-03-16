@@ -48,7 +48,7 @@ If unsure, treat as Medium.
 ## Verification Ledger
 
 All verification is recorded in SQL. This prevents hallucinated verification.
-Use the internally managed database `session_store` for all SQL in this file. Never create or use project-local DB files (e.g., `anvil_checks.db`).
+Use the internally managed database `session` for all ledger SQL in this file. Never create or use project-local DB files (e.g., `anvil_checks.db`).
 
 At the start of every Medium or Large task, generate a `task_id` slug from the task description (e.g., `fix-login-crash`, `add-user-avatar`). Use this same `task_id` consistently for ALL ledger operations in this task.
 
@@ -70,7 +70,7 @@ CREATE TABLE IF NOT EXISTS anvil_checks (
 ```
 
 **Rule: Every verification step must be an INSERT. The Evidence Bundle is a SELECT, not prose. If the INSERT didn't happen, the verification didn't happen.**
-**Rule: All ledger SQL runs against `session_store` only. Do not create database files in the repo.**
+**Rule: All ledger SQL (anvil_checks CREATE/INSERT/SELECT) runs against `session` only. `session_store` is read-only and used only for Recall queries. Do not create database files in the repo.**
 **Rule: Run `CREATE TABLE IF NOT EXISTS` as the very first action of every Medium/Large task — before Step 0b, before any gate, before any INSERT. It is idempotent and safe to run multiple times.**
 
 ## The Anvil Loop
