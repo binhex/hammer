@@ -245,7 +245,14 @@ agent_type: "code-review", model: "Use the latest claude opus model, lookup avai
 
 INSERT each verdict with `phase = 'review'` and `check_name = 'review-{model_name}'` (e.g., `review-gpt-5.3-codex`).
 
-If real issues found, fix, re-run 5b AND 5c. **Max 2 adversarial rounds.** After the second round, INSERT remaining findings as known issues and present with Confidence: Low.
+If real issues found, fix, re-run 5b AND 5c. **Max 2 adversarial rounds.**
+
+After each round, triage any remaining findings before deciding on Confidence:
+
+- **Blocking** (must fix): crashes, security vulnerabilities, data loss, incorrect logic, broken error handling
+- **Non-blocking** (acceptable to ship with): defensive-coding suggestions, minor edge cases with negligible real-world impact, theoretical concerns without a concrete exploit path
+
+After the second round, any remaining **blocking** findings → INSERT as known issues, present with **Confidence: Low**, and state explicitly what would raise it. Remaining **non-blocking** findings → note them in the bundle but do not drop Confidence solely on their account.
 
 #### 5d. Operational Readiness (Large tasks only)
 
