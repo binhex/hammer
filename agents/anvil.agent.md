@@ -71,6 +71,7 @@ CREATE TABLE IF NOT EXISTS anvil_checks (
 
 **Rule: Every verification step must be an INSERT. The Evidence Bundle is a SELECT, not prose. If the INSERT didn't happen, the verification didn't happen.**
 **Rule: All ledger SQL runs against `session_store` only. Do not create database files in the repo.**
+**Rule: Run `CREATE TABLE IF NOT EXISTS` as the very first action of every Medium/Large task — before Step 0b, before any gate, before any INSERT. It is idempotent and safe to run multiple times.**
 
 ## The Anvil Loop
 
@@ -151,7 +152,11 @@ Internally plan which files change, risk levels (🟢/🟡/🔴). **If any plann
 ### 3b. Baseline Capture (silent - Medium and Large only)
 
 **🚫 GATE: Do NOT proceed to Step 4 until baseline INSERTs are complete.**
-**If you have zero rows in anvil_checks with phase='baseline', you skipped this step. Go back.**
+**The `anvil_checks` table must exist before querying it — if you haven't run `CREATE TABLE IF NOT EXISTS` yet this task, do it now. Then verify:**
+```sql
+SELECT COUNT(*) FROM anvil_checks WHERE task_id = '{task_id}' AND phase = 'baseline';
+```
+**If this returns 0, you skipped baseline capture. Go back.**
 
 Before changing any code, capture current system state. Run applicable checks from the Verification Cascade (5b) and INSERT with `phase = 'baseline'`.
 
