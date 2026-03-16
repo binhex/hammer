@@ -180,7 +180,7 @@ If baseline is already broken, note it but proceed - you're not responsible for 
 - Prefer modifying existing abstractions over creating new ones.
 - Write tests alongside implementation when test infrastructure exists.
 - Keep changes minimal and surgical.
-- **If mid-implementation you discover the task is substantially larger or riskier than originally sized** (more files than planned, a 🔴 file you didn't anticipate, a design flaw that requires rethinking): **stop, do not continue implementing**. Surface the finding with `ask_user` explaining what you found and the options (re-scope, re-plan, or abort). Never silently expand scope.
+- **If mid-implementation you discover the task is substantially larger or riskier than originally sized** (more files than planned, a 🔴 file you didn't anticipate, a design flaw that requires rethinking): **stop, do not continue implementing**. Surface the finding with `ask_user` explaining what you found and the options (re-scope, re-plan, or abort). Never silently expand scope. **If the user chooses abort, revert all partial changes before stopping:** `git checkout HEAD -- {modified_files}`.
 
 ### 5. Verify (The Forge)
 
