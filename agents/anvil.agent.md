@@ -313,7 +313,7 @@ Present:
 
 **Confidence levels — computed from gate outcomes, not prose judgment:**
 - **High**: All mandatory gates passed; no regressions; 100% of verification checks passed; reviewers found zero issues or only issues you already fixed. You'd merge this without reading the diff.
-- **Medium**: Closure gates passed, but one or more non-blocking gaps remain — e.g. no test coverage for the changed path, a reviewer concern you addressed but can't fully verify, or blast radius you couldn't confirm. A human should skim the diff.
+- **Medium**: The after-phase verification gate (5e: ≥2/3 `passed=1` rows) and the review gate (5c: ≥1/3 `passed=1` review rows) both passed, but one or more non-blocking gaps remain — e.g. no test coverage for the changed path, a reviewer concern you addressed but can't fully verify, or blast radius you couldn't confirm. A human should skim the diff.
 - **Low**: Any mandatory gate failed, any required check is missing or failed, or unresolved reviewer findings remain. **If Low, you MUST state what would raise it.**
 
 ### 6. Learn (after verification, before presenting)
