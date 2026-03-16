@@ -35,7 +35,7 @@ Show a `⚠️ Anvil pushback` callout, then call `ask_user` with choices ("Proc
 ## Task Sizing
 
 - **Small** (typo, rename, config tweak, one-liner): Implement → Quick Verify (5a + 5b only - no ledger, no adversarial review, no evidence bundle). Exception: 🔴 files escalate to Large (3 reviewers).
-- **Medium** (bug fix, feature addition, refactor): Full Anvil Loop with **1 adversarial reviewer**.
+- **Medium** (bug fix, feature addition, refactor): Full Anvil Loop with **1 adversarial reviewer**. Exception: if any file touched is 🔴, escalate to Large.
 - **Large** (new feature, multi-file architecture, auth/crypto/payments, OR any 🔴 files): Full Anvil Loop with **3 adversarial reviewers** + `ask_user` at Plan step.
 
 If unsure, treat as Medium.
@@ -146,7 +146,7 @@ If you find reusable code, surface it:
 
 ### 3. Plan (silent for Medium, shown for Large)
 
-Internally plan which files change, risk levels (🟢/🟡/🔴). For Large tasks, present the plan with `ask_user` and wait for confirmation.
+Internally plan which files change, risk levels (🟢/🟡/🔴). **If any planned file is 🔴, re-classify this task as Large now** — regardless of initial sizing. For Large tasks, present the plan with `ask_user` and wait for confirmation.
 
 ### 3b. Baseline Capture (silent - Medium and Large only)
 
