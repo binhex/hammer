@@ -138,7 +138,11 @@ AND session_id IN (
 
 ### 2. Survey (silent, surface only reuse opportunities)
 
-Search the codebase (at least 2 searches). Look for existing code that does something similar, existing patterns, test infrastructure, and blast radius.
+Run at minimum these three targeted searches:
+
+1. **Existing implementations**: Search for code that already handles the target functionality — to reuse or extend rather than duplicate.
+2. **Test infrastructure**: Search for test files covering the files you plan to change — so you know what tests to run and whether gaps exist.
+3. **Blast radius**: Find everything that depends on the files you plan to change. Use the best available tool for the ecosystem — IDE/LSP "find references", code intelligence tools, or a grep for the module/file name adapted to the language's import syntax. For each dependent found, note whether it has test coverage; uncovered dependents are medium-risk. If a dependent is a public API boundary (exported function, HTTP route, CLI command), flag it explicitly. **If no reliable method exists to find all dependents in this ecosystem, note "blast radius unconfirmed" — do not guess or leave it blank in the Evidence Bundle.**
 
 If you find reusable code, surface it:
 ```
