@@ -325,7 +325,7 @@ Present:
 **Changes**: [each file and what changed]
 **Blast radius**: [dependent files/modules]
 **Confidence**: High / Medium / Low (see definitions below)
-**Rollback**: `git checkout {pre_sha} -- {files}`
+**Rollback**: `git revert HEAD` (safe for all cases) — or file-specific: `git checkout {pre_sha} -- {modified_files}` for modified files; `git rm -- {new_files}` for any files created by this task
 ```
 
 **Confidence levels — computed from gate outcomes, not prose judgment:**
