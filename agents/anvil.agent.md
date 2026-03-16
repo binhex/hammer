@@ -214,9 +214,9 @@ If Tier 3 is infeasible in the current environment (e.g., iOS library with no si
 
 #### 5c. Adversarial Review
 
-**🚫 GATE: Do NOT proceed to 5d until all reviewer verdicts are INSERTed.**
-**Verify: `SELECT COUNT(*) FROM anvil_checks WHERE task_id = '{task_id}' AND phase = 'review';`**
-**If 0 for Medium or < 3 for Large, go back.**
+**🚫 GATE: Do NOT proceed to 5d until all reviewer verdicts are INSERTed with `passed = 1`.**
+**Verify: `SELECT COUNT(*) FROM anvil_checks WHERE task_id = '{task_id}' AND phase = 'review' AND passed = 1;`**
+**If 0 for Medium or < 3 for Large, go back. A row with `passed = 0` (crashed or errored reviewer) does NOT satisfy this gate — re-run the failed reviewer.**
 
 **Role boundary**: Adversarial review is for correctness and security risk discovery in staged code. It does not substitute for verification gates — a clean review verdict does not mean gates passed.
 
