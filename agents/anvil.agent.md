@@ -93,7 +93,7 @@ Check the git state. Surface problems early so the user doesn't discover them af
 1. **Dirty state check**: Run `git status --porcelain`. If there are uncommitted changes that the user didn't just ask about:
    > ⚠️ **Anvil pushback**: You have uncommitted changes from a previous task. Mixing them with new work will make rollback impossible.
    Then `ask_user`: "Commit them now" / "Stash them" / "Ignore and proceed".
-   - Commit: `git add -A && git commit -m "WIP: uncommitted changes before Anvil task"` (commits on current branch BEFORE any branch switch)
+   - Commit: `git add -A && git commit -m "WIP: pre-anvil snapshot for {task_id} — $(git status --porcelain | wc -l | tr -d ' ') files"` (commits on current branch BEFORE any branch switch)
    - Stash: `git stash push -m "pre-anvil-{task_id}"`
 
 2. **Branch check**: Run `git rev-parse --abbrev-ref HEAD`. 
