@@ -230,7 +230,7 @@ If Tier 3 is infeasible in the current environment (e.g., iOS library with no si
 
 **🚫 GATE: Do NOT proceed to 8.4 until all reviewer verdicts are INSERTed.**
 **Verify: `SELECT COUNT(*) FROM anvil_checks WHERE task_id = '{task_id}' AND phase = 'review' AND passed = 1;`**
-**Thresholds: ≥1 for Medium; ≥3 for Large. Exception: if a reviewer slot is permanently crashed (see crash handling below), reduce the Large threshold by 1 per crashed slot (floor: ≥2 when one slot crashed, ≥1 when two slots crashed). A row with `passed = 0` does NOT satisfy this gate — re-run the failed reviewer or declare the slot permanently crashed per the crash handling rule.**
+**Thresholds: ≥1 for Medium; ≥3 for Large. Exception: if a reviewer slot is permanently crashed (see crash handling below), reduce the Large threshold by 1 per crashed slot (floor: ≥2 when one slot crashed, ≥1 when two slots crashed). If all three Large reviewer slots are permanently crashed, or the single Medium reviewer slot is permanently crashed, this gate cannot pass automatically — use the `ask_user` escalation in crash handling below; proceed only after explicit user confirmation. A row with `passed = 0` does NOT satisfy this gate — re-run the failed reviewer or declare the slot permanently crashed per the crash handling rule.**
 
 **Role boundary**: Adversarial review is for correctness and security risk discovery in staged code. It does not substitute for verification gates — a clean review verdict does not mean gates passed.
 
@@ -263,7 +263,7 @@ INSERT each verdict with `phase = 'review'` and `check_name = 'review-{model_nam
 
 If real issues found, fix, then re-run **8.2 first** — verify it passes before proceeding. Only once 8.2 is clean, re-run 8.3. This ordering prevents launching reviewers against code that is still broken. Before launching round 2 reviewers, re-capture the diff (re-stage → `git diff --staged` → unstage) so reviewers see the post-fix state, not the original diff. **Max 2 adversarial rounds.**
 
-**Reviewer crash handling**: If a reviewer crashes or errors (`passed = 0`) on both rounds for the same model slot, INSERT the row with `passed = 0` and treat that slot as permanently unavailable. Adjust the 8.3 gate minimum for Large tasks: ≥2 `passed=1` review rows suffice when one slot is permanently crashed; ≥1 suffices when two slots are permanently crashed (same threshold as Medium). For Medium tasks, ≥1 remains the minimum regardless. Note each failure explicitly in the Evidence Bundle. Never deadlock waiting for a permanently failed reviewer.
+**Reviewer crash handling**: If a reviewer crashes or errors (`passed = 0`) on both rounds for the same model slot, INSERT the row with `passed = 0` and treat that slot as permanently unavailable. Adjust the 8.3 gate minimum for Large tasks: ≥2 `passed=1` review rows suffice when one slot is permanently crashed; ≥1 suffices when two slots are permanently crashed. **If all three Large reviewer slots are permanently crashed, or the single Medium reviewer slot is permanently crashed, this gate cannot pass — use `ask_user` to surface the situation. If the user confirms proceeding, bypass the 8.3 gate, proceed directly to 8.4 (Large) or 8.5 (Medium), set Confidence to Low, and document "zero adversarial reviews completed — all reviewer slots crashed, user override confirmed" in the Evidence Bundle.** Note each failure explicitly in the Evidence Bundle. Never deadlock waiting for a permanently failed reviewer.
 
 After each round, triage any remaining findings before deciding on Confidence:
 
