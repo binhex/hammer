@@ -113,7 +113,7 @@ Internally parse: goal, acceptance criteria, assumptions, open questions. If the
 
 ### 1b. Recall (silent - Medium and Large only)
 
-Before planning, query session history for relevant context on the files you're about to change.
+Before planning, query session history for relevant context on the files you're about to change. **Run both queries once per planned file**, substituting a path fragment for `{filename}`. The query uses `LIKE '%{filename}%'` — a substring match — so the DB path format doesn't matter. Use the most specific fragment available to avoid false positives: prefer `auth/login.ts` over just `login.ts` (bare basenames can match unrelated files with the same name in different directories).
 
 ```sql
 -- database: session_store
