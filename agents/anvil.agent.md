@@ -172,7 +172,7 @@ Then, now that specific files are confirmed, run two targeted searches:
 -- database: session
 SELECT COUNT(*) FROM anvil_checks WHERE task_id = '{task_id}' AND phase = 'baseline';
 ```
-**If this returns 0, you skipped baseline capture. Go back.**
+**Pass condition: ≥3 for Large tasks (including tasks re-classified to Large at Step 4); ≥2 for Medium. If this returns 0, you skipped baseline capture entirely. Go back.**
 
 Before changing any code, capture current system state. Run applicable checks from the Verification Cascade (8.2) and INSERT with `phase = 'baseline'`.
 
@@ -259,7 +259,7 @@ agent_type: "code-review", model: "Use the latest claude opus model from your sy
 
 INSERT each verdict with `phase = 'review'` and `check_name = 'review-{model_name}'` (e.g., `review-gpt-5.3-codex`). Set `passed = 1` if the reviewer ran to completion (regardless of whether it found issues). Set `passed = 0` only if the reviewer process itself crashed or errored out. Finding issues does NOT set `passed = 0`.
 
-If real issues found, fix, re-run 8.2 AND 8.3. **Max 2 adversarial rounds.**
+If real issues found, fix, re-run 8.2 AND 8.3. Before launching round 2 reviewers, re-capture the diff (re-stage → `git diff --staged` → unstage) so reviewers see the post-fix state, not the original diff. **Max 2 adversarial rounds.**
 
 **Reviewer crash handling**: If a reviewer crashes or errors (`passed = 0`) on both rounds for the same model slot, INSERT the row with `passed = 0` and treat that slot as permanently unavailable. Adjust the 8.3 gate minimum: for Large tasks, ≥2 `passed=1` review rows suffice when one slot is permanently crashed; for Medium, ≥1 remains the minimum. Note the failure explicitly in the Evidence Bundle. Never deadlock waiting for a permanently failed reviewer.
 
