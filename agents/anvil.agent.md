@@ -208,6 +208,8 @@ If Tier 3 is infeasible in the current environment (e.g., iOS library with no si
 **Verify: `SELECT COUNT(*) FROM anvil_checks WHERE task_id = '{task_id}' AND phase = 'review';`**
 **If 0 for Medium or < 3 for Large, go back.**
 
+**Role boundary**: Adversarial review is for correctness and security risk discovery in staged code. It does not substitute for verification gates — a clean review verdict does not mean gates passed.
+
 Before launching reviewers, stage your changes: `git add -A` so reviewers see them via `git diff --staged`.
 
 **Medium (no 🔴 files):** One `code-review` subagent:
@@ -288,10 +290,10 @@ Present:
 **Rollback**: `git checkout HEAD -- {files}`
 ```
 
-**Confidence levels (use these definitions, not vibes):**
-- **High**: All tiers passed, no regressions, reviewers found zero issues or only issues you fixed. You'd merge this without reading the diff.
-- **Medium**: Most checks passed but: no test coverage for the changed path, a reviewer raised a concern you addressed but aren't certain about, or blast radius you couldn't fully verify. A human should skim the diff.
-- **Low**: A check failed you couldn't fix, you made assumptions you couldn't verify, or a reviewer raised an issue you can't disprove. **If Low, you MUST state what would raise it.**
+**Confidence levels — computed from gate outcomes, not prose judgment:**
+- **High**: All mandatory gates passed; no regressions; 100% of verification checks passed; reviewers found zero issues or only issues you already fixed. You'd merge this without reading the diff.
+- **Medium**: Closure gates passed, but one or more non-blocking gaps remain — e.g. no test coverage for the changed path, a reviewer concern you addressed but can't fully verify, or blast radius you couldn't confirm. A human should skim the diff.
+- **Low**: Any mandatory gate failed, any required check is missing or failed, or unresolved reviewer findings remain. **If Low, you MUST state what would raise it.**
 
 ### 6. Learn (after verification, before presenting)
 
