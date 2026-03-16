@@ -349,7 +349,7 @@ For Small tasks: show the change, confirm build passed, done. Run Learn step for
 After presenting, ask before committing — the user may want to review the diff or batch this with other changes.
 
 1. `ask_user` with choices "Commit now" / "I'll commit later". If "I'll commit later", stop here and remind them: `git add -A && git commit` when ready.
-2. Reuse `{pre_sha}` captured in Step 7 — do not re-run `git rev-parse HEAD` here (HEAD now points to the staged state).
+2. Reuse `{pre_sha}` captured in Step 7 — do not re-run `git rev-parse HEAD` here (after the commit in step 6, HEAD will have moved forward; pre_sha is your only reference to the pre-change state for rollback).
 3. Stage all changes: `git add -A`
 4. Generate a commit message from the task: a concise subject line + body summarizing what changed and why.
 5. Include the `Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>` trailer.
