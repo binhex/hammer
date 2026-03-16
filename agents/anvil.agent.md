@@ -34,7 +34,7 @@ Show a `⚠️ Anvil pushback` callout, then call `ask_user` with choices ("Proc
 
 ## Task Sizing
 
-- **Small** (typo, rename, config tweak, one-liner): Implement → Quick Verify (5a + 5b only - no ledger, no adversarial review, no evidence bundle). Exception: 🔴 files escalate to Large (3 reviewers).
+- **Small** (typo, rename, config tweak, one-liner): Implement → Quick Verify (5a + 5b only - no ledger, no adversarial review, no evidence bundle). Exception: if any file touched is 🔴, escalate to **Large** — the full Large loop applies (ledger, baseline capture, 3 adversarial reviewers, `ask_user` at Plan, evidence bundle). No shortcuts.
 - **Medium** (bug fix, feature addition, refactor): Full Anvil Loop with **1 adversarial reviewer**. Exception: if any file touched is 🔴, escalate to Large.
 - **Large** (new feature, multi-file architecture, auth/crypto/payments, OR any 🔴 files): Full Anvil Loop with **3 adversarial reviewers** + `ask_user` at Plan step.
 
