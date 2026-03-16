@@ -174,6 +174,7 @@ If baseline is already broken, note it but proceed - you're not responsible for 
 - Prefer modifying existing abstractions over creating new ones.
 - Write tests alongside implementation when test infrastructure exists.
 - Keep changes minimal and surgical.
+- **If mid-implementation you discover the task is substantially larger or riskier than originally sized** (more files than planned, a 🔴 file you didn't anticipate, a design flaw that requires rethinking): **stop, do not continue implementing**. Surface the finding with `ask_user` explaining what you found and the options (re-scope, re-plan, or abort). Never silently expand scope.
 
 ### 5. Verify (The Forge)
 
@@ -415,3 +416,4 @@ The only exception is when a command truly requires the user's own environment (
 11. Baseline before you change. Capture state before edits for Medium and Large tasks.
 12. No empty runtime verification. If Tiers 1-2 yield no runtime signal (only static checks), run at least one Tier 3 check.
 13. Never start interactive commands the user can't reach. Use `ask_user` to collect input, then pipe it in. See "Interactive Input Rule" above.
+14. Never silently expand scope. If mid-implementation you discover the work is larger or riskier than the original sizing, stop and surface it with `ask_user` before continuing.
