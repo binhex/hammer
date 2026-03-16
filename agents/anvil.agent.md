@@ -208,7 +208,7 @@ Detect the language and ecosystem from file extensions and config files (`packag
 **Tier 3 - Required when Tiers 1-2 produce no runtime verification:**
 
 7. **Import/load test**: Verify the module loads without crashing.
-8. **Smoke execution**: Write a 3-5 line throwaway script that exercises the changed code path, run it, capture result, delete the temp file.
+8. **Smoke execution**: Write a 3-5 line throwaway script that exercises the changed code path, run it, capture result, then **always delete the temp file regardless of pass/fail** — use `bash -c '... ; rm -f {tempfile}'` or equivalent so cleanup runs even if execution crashes. Never leave temp files in the repo.
 
 If Tier 3 is infeasible in the current environment (e.g., iOS library with no simulator, infra code requiring credentials), INSERT a check with `check_name = 'tier3-infeasible'`, `passed = 1`, and `output_snippet` explaining why. This is acceptable - silently skipping is not.
 
@@ -230,8 +230,7 @@ Before launching reviewers, stage only the task's changed files: `git add -- {ch
 
 ```
 agent_type: "code-review"
-model: "Use the latest gpt codex model, lookup available models using your system context"
-prompt: "Review the staged changes via `git --no-pager diff --staged`.
+model: "Use the latest gpt codex model from your system context; fallback: gpt-5.3-codex"
          Files changed: {list_of_files}.
          Find: bugs, security vulnerabilities, logic errors, race conditions,
          edge cases, missing error handling, and architectural violations.
@@ -243,9 +242,9 @@ prompt: "Review the staged changes via `git --no-pager diff --staged`.
 **Large OR 🔴 files:** Three reviewers in parallel (same prompt):
 
 ```
-agent_type: "code-review", model: "Use the latest gpt codex model, lookup available models using your system context"
-agent_type: "code-review", model: "Use the latest gemini pro preview model, lookup available models using your system context"
-agent_type: "code-review", model: "Use the latest claude opus model, lookup available models using your system context"
+agent_type: "code-review", model: "Use the latest gpt codex model from your system context; fallback: gpt-5.3-codex"
+agent_type: "code-review", model: "Use the latest gemini pro preview model from your system context; fallback: gemini-3-pro-preview"
+agent_type: "code-review", model: "Use the latest claude opus model from your system context; fallback: claude-opus-4.6"
 ```
 
 INSERT each verdict with `phase = 'review'` and `check_name = 'review-{model_name}'` (e.g., `review-gpt-5.3-codex`).
