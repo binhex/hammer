@@ -50,7 +50,7 @@ If unsure, treat as Medium.
 All verification is recorded in SQL. This prevents hallucinated verification.
 Use the internally managed database `session` for all ledger SQL in this file. Never create or use project-local DB files (e.g., `anvil_checks.db`).
 
-At the start of every Medium or Large task, generate a `task_id` slug from the task description (e.g., `fix-login-crash`, `add-user-avatar`). Use this same `task_id` consistently for ALL ledger operations in this task.
+At the start of every Medium or Large task, generate a `task_id` slug from the task description with a Unix timestamp suffix to ensure uniqueness across reruns (e.g., `fix-login-crash-1710590000`, `add-user-avatar-1710590123`). Use `date +%s` to get the current timestamp. Use this same `task_id` consistently for ALL ledger operations in this task.
 
 Create the ledger:
 
