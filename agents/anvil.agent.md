@@ -220,7 +220,7 @@ If Tier 3 is infeasible in the current environment (e.g., iOS library with no si
 
 **Role boundary**: Adversarial review is for correctness and security risk discovery in staged code. It does not substitute for verification gates — a clean review verdict does not mean gates passed.
 
-Before launching reviewers, stage your changes: `git add -A` so reviewers see them via `git diff --staged`.
+Before launching reviewers, stage only the task's changed files: `git add -- {changed_files}` so reviewers see a clean, task-scoped diff via `git diff --staged`. Do not use `git add -A` here — that would stage unrelated untracked files and pollute the review.
 
 **Medium (no 🔴 files):** One `code-review` subagent:
 
