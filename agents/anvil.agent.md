@@ -170,7 +170,7 @@ SELECT COUNT(*) FROM anvil_checks WHERE task_id = '{task_id}' AND phase = 'basel
 
 Before changing any code, capture current system state. Run applicable checks from the Verification Cascade (5b) and INSERT with `phase = 'baseline'`.
 
-Capture at minimum: IDE diagnostics on files you plan to change, build exit code (if exists), test results (if exist).
+Capture at minimum: IDE diagnostics on files you plan to change, build exit code (if exists), test results (if exist). **If this task was re-classified to Large at Step 3, capture ≥ 3 baseline checks — not 2.**
 
 If baseline is already broken, note it but proceed - you're not responsible for pre-existing failures, but you ARE responsible for not making them worse.
 
