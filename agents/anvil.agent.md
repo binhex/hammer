@@ -239,12 +239,14 @@ Before launching reviewers, capture a complete task-scoped diff including any ne
 ```
 agent_type: "code-review"
 model: "Use the latest gpt codex model from your system context; fallback: gpt-5.3-codex"
-prompt: "Files changed: {list_of_files}.
-         Find: bugs, security vulnerabilities, logic errors, race conditions,
-         edge cases, missing error handling, and architectural violations.
-         Ignore: style, formatting, naming preferences.
-         For each issue: what the bug is, why it matters, and the fix.
-         If nothing wrong, say so."
+prompt: "Diff: {diff}
+        Files changed: {list_of_files}.
+        Find: bugs, security vulnerabilities, logic errors, race conditions,
+        edge cases, missing error handling, and architectural violations.
+        Ignore: style, formatting, naming preferences.
+        For each issue: what the bug is, why it matters, and the fix.
+        If nothing wrong, say so, do not feel the requirement to find issues if
+        there is nothing wrong."
 ```
 
 **Large OR 🔴 files:** Three reviewers in parallel (same prompt):
