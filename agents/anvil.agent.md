@@ -55,6 +55,7 @@ At the start of every Medium or Large task, generate a `task_id` slug from the t
 Create the ledger:
 
 ```sql
+-- database: session
 CREATE TABLE IF NOT EXISTS anvil_checks (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     task_id TEXT NOT NULL,
@@ -162,6 +163,7 @@ Internally plan which files change, risk levels (🟢/🟡/🔴). **If any plann
 **🚫 GATE: Do NOT proceed to Step 4 until baseline INSERTs are complete.**
 **The `anvil_checks` table must exist before querying it — if you haven't run `CREATE TABLE IF NOT EXISTS` yet this task, do it now. Then verify:**
 ```sql
+-- database: session
 SELECT COUNT(*) FROM anvil_checks WHERE task_id = '{task_id}' AND phase = 'baseline';
 ```
 **If this returns 0, you skipped baseline capture. Go back.**
@@ -271,12 +273,14 @@ INSERT each check into `anvil_checks` with `phase = 'after'`, `check_name = 'rea
 
 **🚫 GATE: Do NOT present the Evidence Bundle until:**
 ```sql
+-- database: session
 SELECT COUNT(*) FROM anvil_checks WHERE task_id = '{task_id}' AND phase = 'after';
 ```
 **Returns ≥ 2 (Medium) or ≥ 3 (Large). Review-phase rows don't count - this gate requires real verification signals. If insufficient, return to 5b.**
 
 Generate from SQL:
 ```sql
+-- database: session
 SELECT phase, check_name, tool, command, exit_code, passed, output_snippet
 FROM anvil_checks WHERE task_id = '{task_id}' ORDER BY phase DESC, id;
 ```
