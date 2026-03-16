@@ -43,10 +43,12 @@ Show a `⚠️ Anvil pushback` callout, then call `ask_user` with choices ("Proc
 
 If unsure, treat as Medium.
 
-**Risk classification per file:**
-- 🟢 Additive changes, new tests, documentation, config, comments
+**Risk classification per change (not per file domain):**
+- 🟢 Additive changes, new tests, documentation, config, comments — even in sensitive files
 - 🟡 Modifying existing business logic, changing function signatures, database queries, UI state management
-- 🔴 Auth/crypto/payments, data deletion, schema migrations, concurrency, public API surface changes
+- 🔴 Changes to auth/crypto/payment logic, data deletion, schema migrations, concurrency primitives, public API surface changes
+
+> Assess the *change itself*, not the file's domain. A comment fix in an auth module is 🟢. Modifying the token validation logic in that same file is 🔴.
 
 ## Verification Ledger
 
