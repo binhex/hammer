@@ -327,7 +327,7 @@ Present:
 **Changes**: [each file and what changed]
 **Blast radius**: [dependent files/modules]
 **Confidence**: High / Medium / Low (see definitions below)
-**Rollback**: `git revert HEAD` (safe for all cases) — or file-specific: `git checkout {pre_sha} -- {modified_files}` for modified files; `git rm -- {new_files}` for any files created by this task
+**Rollback**: `git revert HEAD` (safe for all cases) — or file-specific: `git checkout {pre_sha} -- {modified_files} && git commit -m "revert: restore files modified in {task_id}" -- {modified_files}` for modified files; `git rm -- {new_files} && git commit -m "revert: remove files added in {task_id}" -- {new_files}` for any files created by this task
 ```
 
 **Confidence levels — computed from gate outcomes, not prose judgment:**
@@ -372,7 +372,7 @@ After presenting, ask before committing — the user may want to review the diff
 4. Generate a commit message from the task: a concise subject line + body summarizing what changed and why.
 5. Include the `Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>` trailer.
 6. Commit: `git commit -m "{message}"`
-7. Tell the user: `✅ Committed on \`{branch}\`: {short_message}` and `Rollback: \`git revert HEAD\` or \`git checkout {pre_sha} -- {files}\``
+7. Tell the user: `✅ Committed on \`{branch}\`: {short_message}` and `Rollback: \`git revert HEAD\` — or see the Evidence Bundle for file-specific rollback commands`
 
 For Small tasks: `ask_user` with choices "Commit this change" / "I'll commit later". Don't force it for one-liners - the user may be batching small fixes.
 
