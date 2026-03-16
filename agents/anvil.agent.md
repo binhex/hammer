@@ -109,7 +109,7 @@ Check the git state. Surface problems early so the user doesn't discover them af
      Then `ask_user` with choices: "Create branch for me" / "Stay on main" / "I'll handle it".
      If "Create branch for me": `git checkout -b anvil/{task_id}`.
 
-3. **Worktree detection**: Run `git rev-parse --show-toplevel` and compare to cwd. If in a worktree, note it silently. If the worktree directory name doesn't match the current branch name, use `ask_user`: "You're in worktree `{dir}` but on branch `{branch}`. Continue here?" with choices "Continue here" / "I'll switch to the right place first". If "I'll switch", stop and wait.
+3. **Worktree detection**: Run `git rev-parse --git-dir`. If the output is `.git` or a relative path, you are in the main worktree — continue silently. If the output is an absolute path (e.g., `/path/to/repo/.git/worktrees/…`), you are in a linked worktree. Extract the worktree directory name and compare it to the current branch name (from step 2); if they don't match, use `ask_user`: "You're in worktree `{dir}` but on branch `{branch}`. Continue here?" with choices "Continue here" / "I'll switch to the right place first". If "I'll switch", stop and wait.
 
 **Last**: after all hygiene operations above are complete, capture `pre_sha` by running `git rev-parse HEAD` and storing the result. This is the task-start rollback anchor — captured after any WIP commits or branch switches that were triggered by hygiene, so it points to the true start-of-task HEAD. Reused in Step 10 and Step 11. If this command fails (e.g., empty repo with no commits), set `pre_sha` to empty string and note that rollback to a prior state is unavailable.
 
