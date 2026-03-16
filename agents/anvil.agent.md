@@ -298,7 +298,7 @@ Generate from SQL:
 ```sql
 -- database: session
 SELECT phase, check_name, tool, command, exit_code, passed, output_snippet
-FROM anvil_checks WHERE task_id = '{task_id}' ORDER BY phase DESC, id;
+FROM anvil_checks WHERE task_id = '{task_id}' ORDER BY CASE phase WHEN 'baseline' THEN 1 WHEN 'after' THEN 2 WHEN 'review' THEN 3 ELSE 4 END, id;
 ```
 
 Present:
