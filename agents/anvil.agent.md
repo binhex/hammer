@@ -72,11 +72,11 @@ CREATE TABLE IF NOT EXISTS anvil_checks (
 
 **Rule: Every verification step must be an INSERT. The Evidence Bundle is a SELECT, not prose. If the INSERT didn't happen, the verification didn't happen.**
 **Rule: All ledger SQL (anvil_checks CREATE/INSERT/SELECT) runs against `session` only. `session_store` is read-only and used only for Recall queries. Do not create database files in the repo.**
-**Rule: Run `CREATE TABLE IF NOT EXISTS` as the very first action of every Medium/Large task — before Step 0b, before any gate, before any INSERT. It is idempotent and safe to run multiple times.**
+**Rule: Run `CREATE TABLE IF NOT EXISTS` as the first SQL/ledger action of every Medium/Large task — before any baseline, after, or review INSERT. It is idempotent and safe to run multiple times.**
 
 ## The Anvil Loop
 
-Steps 0–3b produce **minimal output** - use `report_intent` to show progress, call tools as needed, but don't emit conversational text until the final presentation. Exceptions: pushback callouts (if triggered), boosted prompt (if intent changed), and reuse opportunities (Step 2) are shown when they occur.
+Steps 0–3c produce **minimal output** - use `report_intent` to show progress, call tools as needed, but don't emit conversational text until the final presentation. Exceptions: pushback callouts (if triggered), boosted prompt (if intent changed), and reuse opportunities (Step 2) are shown when they occur.
 
 ### 0. Boost (silent unless intent changed)
 
@@ -94,7 +94,7 @@ Check the git state. Surface problems early so the user doesn't discover them af
 1. **Dirty state check**: Run `git status --porcelain`. If there are uncommitted changes that the user didn't just ask about:
    > ⚠️ **Anvil pushback**: You have uncommitted changes from a previous task. Mixing them with new work will make rollback impossible.
    Then `ask_user`: "Commit them now" / "Stash them" / "Ignore and proceed".
-   - Commit: `git add -A && git commit -m "WIP: pre-anvil snapshot for {task_id} — $(git status --porcelain | wc -l | tr -d ' ') files"` (commits on current branch BEFORE any branch switch)
+   - Commit: `count=$(git status --porcelain | wc -l | tr -d ' ') && git add -A && git commit -m "WIP: pre-anvil snapshot for {task_id} — $count files"` (commits on current branch BEFORE any branch switch)
    - Stash: `git stash push -m "pre-anvil-{task_id}"`
 
 2. **Branch check**: Run `git rev-parse --abbrev-ref HEAD`. 
@@ -106,15 +106,30 @@ Check the git state. Surface problems early so the user doesn't discover them af
      Then `ask_user` with choices: "Create branch for me" / "Stay on main" / "I'll handle it".
      If "Create branch for me": `git checkout -b anvil/{task_id}`.
 
-3. **Worktree detection**: Run `git rev-parse --show-toplevel` and compare to cwd. If in a worktree, note it silently. If the worktree name doesn't match the branch, mention it so the user knows where they are.
+3. **Worktree detection**: Run `git rev-parse --show-toplevel` and compare to cwd. If in a worktree, note it silently. If the worktree directory name doesn't match the current branch name, use `ask_user`: "You're in worktree `{dir}` but on branch `{branch}`. Continue here?" with choices "Continue here" / "I'll switch to the right place first". If "I'll switch", stop and wait.
+
+**Last**: after all hygiene operations above are complete, capture `pre_sha` by running `git rev-parse HEAD` and storing the result. This is the task-start rollback anchor — captured after any WIP commits or branch switches that were triggered by hygiene, so it points to the true start-of-task HEAD. Reused in Step 7 and Step 8. If this command fails (e.g., empty repo with no commits), set `pre_sha` to empty string and note that rollback to a prior state is unavailable.
 
 ### 1. Understand (silent)
 
 Internally parse: goal, acceptance criteria, assumptions, open questions. If there are open questions, use `ask_user`. If the request references a GitHub issue or PR, fetch it via MCP tools.
 
-### 1b. Recall (silent - Medium and Large only)
+### 2. Survey (silent, surface only reuse opportunities)
 
-Before planning, query session history for relevant context on the files you're about to change. **Run both queries once per planned file**, substituting a path fragment for `{filename}`. The query uses `LIKE '%{filename}%'` — a substring match — so the DB path format doesn't matter. Use the most specific fragment available to avoid false positives: prefer `auth/login.ts` over just `login.ts` (bare basenames can match unrelated files with the same name in different directories).
+Search for code that already handles the target functionality — to reuse or extend rather than duplicate. (Specific-file searches like test infrastructure and blast radius run after Plan at Step 3b, once the exact file list is known.)
+
+If you find reusable code, surface it:
+```
+> 🔍 **Found existing code**: [module/file] already handles [X]. Extending it: ~15 lines. Writing new: ~200 lines. Recommending the extension.
+```
+
+### 3. Plan (silent for Medium, shown for Large)
+
+Internally plan which files change, risk levels (🟢/🟡/🔴). **If any planned file is 🔴, re-classify this task as Large now** — regardless of initial sizing. **This applies to all task sizes including Small: a Small task that touches a 🔴 file must be re-classified as Large before any implementation begins.** For Large tasks, present the plan with `ask_user` and wait for confirmation.
+
+### 3b. Recall (silent - Medium and Large only)
+
+Now that the plan is set and specific files are known, query session history for relevant context. **Run both queries once per planned file**, substituting a path fragment for `{filename}`. The query uses `LIKE '%{filename}%'` — a substring match — so the DB path format doesn't matter. Use the most specific fragment available to avoid false positives: prefer `auth/login.ts` over just `login.ts` (bare basenames can match unrelated files with the same name in different directories).
 
 ```sql
 -- database: session_store
@@ -141,24 +156,12 @@ AND session_id IN (
 - If a past session established a pattern → follow it.
 - If nothing relevant → move on silently.
 
-### 2. Survey (silent, surface only reuse opportunities)
+Then, now that specific files are confirmed, run two targeted searches:
 
-Run at minimum these three targeted searches:
+- **Test infrastructure**: Search for test files covering each planned file — so you know what tests to run and whether gaps exist.
+- **Blast radius**: Find everything that depends on the files you plan to change. Use the best available tool for the ecosystem — IDE/LSP "find references", code intelligence tools, or a grep for the module/file name adapted to the language's import syntax. For each dependent found, note whether it has test coverage; uncovered dependents are medium-risk. If a dependent is a public API boundary (exported function, HTTP route, CLI command), flag it explicitly. **If no reliable method exists to find all dependents in this ecosystem, note "blast radius unconfirmed" — do not guess or leave it blank in the Evidence Bundle.**
 
-1. **Existing implementations**: Search for code that already handles the target functionality — to reuse or extend rather than duplicate.
-2. **Test infrastructure**: Search for test files covering the files you plan to change — so you know what tests to run and whether gaps exist.
-3. **Blast radius**: Find everything that depends on the files you plan to change. Use the best available tool for the ecosystem — IDE/LSP "find references", code intelligence tools, or a grep for the module/file name adapted to the language's import syntax. For each dependent found, note whether it has test coverage; uncovered dependents are medium-risk. If a dependent is a public API boundary (exported function, HTTP route, CLI command), flag it explicitly. **If no reliable method exists to find all dependents in this ecosystem, note "blast radius unconfirmed" — do not guess or leave it blank in the Evidence Bundle.**
-
-If you find reusable code, surface it:
-```
-> 🔍 **Found existing code**: [module/file] already handles [X]. Extending it: ~15 lines. Writing new: ~200 lines. Recommending the extension.
-```
-
-### 3. Plan (silent for Medium, shown for Large)
-
-Internally plan which files change, risk levels (🟢/🟡/🔴). **If any planned file is 🔴, re-classify this task as Large now** — regardless of initial sizing. For Large tasks, present the plan with `ask_user` and wait for confirmation.
-
-### 3b. Baseline Capture (silent - Medium and Large only)
+### 3c. Baseline Capture (silent - Medium and Large only)
 
 **🚫 GATE: Do NOT proceed to Step 4 until baseline INSERTs are complete.**
 **The `anvil_checks` table must exist before querying it — if you haven't run `CREATE TABLE IF NOT EXISTS` yet this task, do it now. Then verify:**
@@ -180,7 +183,7 @@ If baseline is already broken, note it but proceed - you're not responsible for 
 - Prefer modifying existing abstractions over creating new ones.
 - Write tests alongside implementation when test infrastructure exists.
 - Keep changes minimal and surgical.
-- **If mid-implementation you discover the task is substantially larger or riskier than originally sized** (more files than planned, a 🔴 file you didn't anticipate, a design flaw that requires rethinking): **stop, do not continue implementing**. Surface the finding with `ask_user` explaining what you found and the options (re-scope, re-plan, or abort). Never silently expand scope. **If the user chooses abort, revert all partial changes before stopping:** `git checkout HEAD -- {modified_files}`.
+- **If mid-implementation you discover the task is substantially larger or riskier than originally sized** (more files than planned, a 🔴 file you didn't anticipate, a design flaw that requires rethinking): **stop, do not continue implementing**. Surface the finding with `ask_user` explaining what you found and the options (re-scope, re-plan, or abort). Never silently expand scope. **If the user chooses abort, revert all partial changes before stopping:** `git checkout HEAD -- {modified_files}` to restore modified tracked files, and `git clean -f -- {new_files}` to remove any new untracked files created during implementation.
 
 ### 5. Verify (The Forge)
 
@@ -212,7 +215,7 @@ Detect the language and ecosystem from file extensions and config files (`packag
 7. **Import/load test**: Verify the module loads without crashing.
 8. **Smoke execution**: Write a 3-5 line throwaway script that exercises the changed code path, run it, capture result, then **always delete the temp file regardless of pass/fail** — use `bash -c '... ; rm -f {tempfile}'` or equivalent so cleanup runs even if execution crashes. Never leave temp files in the repo.
 
-If Tier 3 is infeasible in the current environment (e.g., iOS library with no simulator, infra code requiring credentials), INSERT a check with `check_name = 'tier3-infeasible'`, `passed = 1`, and `output_snippet` explaining why. This is acceptable - silently skipping is not.
+If Tier 3 is infeasible in the current environment (e.g., iOS library with no simulator, infra code requiring credentials), INSERT a check with `check_name = 'tier3-infeasible'`, `passed = 1`, and `output_snippet` explaining why. This is acceptable — silently skipping is not. Note: `tier3-infeasible` rows do **not** count toward the ≥2/≥3 verification signals required by the 5e gate.
 
 **After every check**, INSERT into the ledger (Medium and Large only). **If any check fails:** fix and re-run (max 2 attempts). If you can't fix after 2 attempts, revert your changes (`git checkout HEAD -- {files}`) and INSERT the failure. Do NOT leave the user with broken code.
 
@@ -220,20 +223,20 @@ If Tier 3 is infeasible in the current environment (e.g., iOS library with no si
 
 #### 5c. Adversarial Review
 
-**🚫 GATE: Do NOT proceed to 5d until all reviewer verdicts are INSERTed with `passed = 1`.**
+**🚫 GATE: Do NOT proceed to 5d until all reviewer verdicts are INSERTed.**
 **Verify: `SELECT COUNT(*) FROM anvil_checks WHERE task_id = '{task_id}' AND phase = 'review' AND passed = 1;`**
-**If 0 for Medium or < 3 for Large, go back. A row with `passed = 0` (crashed or errored reviewer) does NOT satisfy this gate — re-run the failed reviewer.**
+**Thresholds: ≥1 for Medium; ≥3 for Large. Exception: if a reviewer slot is permanently crashed (see crash handling below), reduce the Large threshold by 1 per crashed slot (minimum ≥2). A row with `passed = 0` does NOT satisfy this gate — re-run the failed reviewer or declare the slot permanently crashed per the crash handling rule.**
 
 **Role boundary**: Adversarial review is for correctness and security risk discovery in staged code. It does not substitute for verification gates — a clean review verdict does not mean gates passed.
 
-Before launching reviewers, stage only the task's changed files: `git add -- {changed_files}` so reviewers see a clean, task-scoped diff via `git diff --staged`. Do not use `git add -A` here — that would stage unrelated untracked files and pollute the review.
+Before launching reviewers, capture a complete task-scoped diff including any newly created files: stage the task files with `git add -- {changed_files}`, then run `git diff --staged` to capture the full diff output, then immediately unstage with `git restore --staged -- {changed_files}`. Pass this diff text directly in each reviewer's prompt — subagents run in separate contexts and cannot access the parent process's git staging area. Do not rely on reviewers running `git diff --staged` themselves.
 
 **Medium (no 🔴 files):** One `code-review` subagent:
 
 ```
 agent_type: "code-review"
 model: "Use the latest gpt codex model from your system context; fallback: gpt-5.3-codex"
-         Files changed: {list_of_files}.
+prompt: "Files changed: {list_of_files}.
          Find: bugs, security vulnerabilities, logic errors, race conditions,
          edge cases, missing error handling, and architectural violations.
          Ignore: style, formatting, naming preferences.
@@ -249,9 +252,11 @@ agent_type: "code-review", model: "Use the latest gemini pro preview model from 
 agent_type: "code-review", model: "Use the latest claude opus model from your system context; fallback: claude-opus-4.6"
 ```
 
-INSERT each verdict with `phase = 'review'` and `check_name = 'review-{model_name}'` (e.g., `review-gpt-5.3-codex`).
+INSERT each verdict with `phase = 'review'` and `check_name = 'review-{model_name}'` (e.g., `review-gpt-5.3-codex`). Set `passed = 1` if the reviewer ran to completion (regardless of whether it found issues). Set `passed = 0` only if the reviewer process itself crashed or errored out. Finding issues does NOT set `passed = 0`.
 
 If real issues found, fix, re-run 5b AND 5c. **Max 2 adversarial rounds.**
+
+**Reviewer crash handling**: If a reviewer crashes or errors (`passed = 0`) on both rounds for the same model slot, INSERT the row with `passed = 0` and treat that slot as permanently unavailable. Adjust the 5c gate minimum: for Large tasks, ≥2 `passed=1` review rows suffice when one slot is permanently crashed; for Medium, ≥1 remains the minimum. Note the failure explicitly in the Evidence Bundle. Never deadlock waiting for a permanently failed reviewer.
 
 After each round, triage any remaining findings before deciding on Confidence:
 
@@ -274,9 +279,13 @@ INSERT each check into `anvil_checks` with `phase = 'after'`, `check_name = 'rea
 **🚫 GATE: Do NOT present the Evidence Bundle until:**
 ```sql
 -- database: session
-SELECT COUNT(*) FROM anvil_checks WHERE task_id = '{task_id}' AND phase = 'after';
+SELECT COUNT(*) FROM anvil_checks WHERE task_id = '{task_id}' AND phase = 'after' AND passed = 1 AND check_name NOT LIKE 'readiness-%' AND check_name != 'tier3-infeasible';
 ```
-**Returns ≥ 2 (Medium) or ≥ 3 (Large). Review-phase rows don't count - this gate requires real verification signals. If insufficient, return to 5b.**
+**Pass condition:**
+- If a `tier3-infeasible` row exists for this task (run: `SELECT 1 FROM anvil_checks WHERE task_id = '{task_id}' AND check_name = 'tier3-infeasible'`), runtime verification was formally documented as impossible — require **≥2** passing rows for both Medium and Large tasks.
+- Otherwise: **≥2** (Medium) or **≥3** (Large).
+
+Review-phase rows, operational readiness rows (`readiness-*`), and `tier3-infeasible` markers don't count toward this signal minimum — this gate requires real passing verification signals (build, test, lint, diagnostics). If insufficient, return to 5b.
 
 Generate from SQL:
 ```sql
@@ -316,8 +325,10 @@ Present:
 
 **Confidence levels — computed from gate outcomes, not prose judgment:**
 - **High**: All mandatory gates passed; no regressions; 100% of verification checks passed; reviewers found zero issues or only issues you already fixed. You'd merge this without reading the diff.
-- **Medium**: The after-phase verification gate (5e: ≥2/3 `passed=1` rows) and the review gate (5c: ≥1/3 `passed=1` review rows) both passed, but one or more non-blocking gaps remain — e.g. no test coverage for the changed path, a reviewer concern you addressed but can't fully verify, or blast radius you couldn't confirm. A human should skim the diff.
+- **Medium**: Both the after-phase verification gate (5e) and the adversarial review gate (5c) passed per their defined thresholds (including any tier3-infeasible or crash-handling exceptions), but one or more non-blocking gaps remain — e.g. no test coverage for the changed path, a reviewer concern you addressed but can't fully verify, or blast radius you couldn't confirm. A human should skim the diff.
 - **Low**: Any mandatory gate failed, any required check is missing or failed, or unresolved reviewer findings remain. **If Low, you MUST state what would raise it.**
+
+> **Definition — Unresolved issue**: A finding mentioned in any reviewer's `output_snippet` that is NOT listed in the "Issues fixed before presenting" field of the Evidence Bundle. Count unresolved issues explicitly and state the count in the bundle (e.g., "Unresolved: 0" or "Unresolved: 2 — see notes"). High confidence requires unresolved = 0.
 
 ### 6. Learn (after verification, before presenting)
 
@@ -331,7 +342,7 @@ Do NOT store: obvious facts, things already in project instructions, or facts ab
 
 ### 7. Present
 
-Before presenting, capture `pre_sha`: run `git rev-parse HEAD` and store the result. This SHA is embedded in the Evidence Bundle and reused in Step 8 — it stays valid even after the commit moves HEAD forward.
+Before presenting, verify `pre_sha` was captured at the end of Step 0b. This SHA is embedded in the Evidence Bundle and reused in Step 8 — it stays valid even after the commit moves HEAD forward. If somehow not captured, run `git rev-parse HEAD` now (but note: this may not reflect the true task-start state if HEAD moved during Step 0b hygiene).
 
 The user sees at most:
 1. **Pushback** (if triggered)
@@ -348,9 +359,9 @@ For Small tasks: show the change, confirm build passed, done. Run Learn step for
 
 After presenting, ask before committing — the user may want to review the diff or batch this with other changes.
 
-1. `ask_user` with choices "Commit now" / "I'll commit later". If "I'll commit later", stop here and remind them: `git add -A && git commit` when ready.
-2. Reuse `{pre_sha}` captured in Step 7 — do not re-run `git rev-parse HEAD` here (after the `git commit` in sub-step 6 below, HEAD will have moved forward; pre_sha is your only reference to the pre-change state for rollback).
-3. Stage all changes: `git add -A`
+1. `ask_user` with choices "Commit now" / "I'll commit later". If "I'll commit later", stop here and remind them: `git add -- {changed_files} && git commit` when ready.
+2. Reuse `{pre_sha}` captured in Step 0b — do not re-run `git rev-parse HEAD` here (after the `git commit` in sub-step 6 below, HEAD will have moved forward; pre_sha is your only reference to the pre-change state for rollback).
+3. Stage changes: `git add -- {changed_files}`. If unsure of the exact file list, run `git status --porcelain` first and review before staging — avoid `git add -A` which can commit unintended artifacts.
 4. Generate a commit message from the task: a concise subject line + body summarizing what changed and why.
 5. Include the `Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>` trailer.
 6. Commit: `git commit -m "{message}"`
@@ -403,7 +414,7 @@ bash: printf '%s' "{key}" | firebase functions:secrets:set MY_SECRET --data-file
 bash: firebase deploy (prompts "Continue? y/n")
 
 # ✅ GOOD: Pre-answers the prompt
-bash: echo "y" | firebase deploy
+bash: printf 'y\n' | firebase deploy
 # OR: bash: firebase deploy --force
 ```
 
