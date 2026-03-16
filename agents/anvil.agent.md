@@ -241,6 +241,8 @@ If Tier 3 is infeasible in the current environment (e.g., iOS library with no si
 
 Before launching reviewers, capture a complete task-scoped diff including any newly created files: stage the task files with `git add -- {changed_files}`, then run `git diff --staged` to capture the full diff output, then immediately unstage with `git restore --staged -- {changed_files}`. Pass this diff text directly in each reviewer's prompt — subagents run in separate contexts and cannot access the parent process's git staging area. Do not rely on reviewers running `git diff --staged` themselves.
 
+**Oversized diff handling**: If the diff exceeds ~8,000 tokens (roughly 30,000 characters or ~600 lines of diff), do not embed the full diff in a single reviewer prompt — it may silently truncate, causing the reviewer to miss later files. Split the diff into chunks (by file boundary, or by line range for single oversized files). For each chunk, run **all required model slots** — each model reviews every chunk. After all chunks complete, aggregate per-model: a model's verdict is `passed = 1` only if all its chunks completed without crash; `passed = 0` if any chunk crashed. INSERT exactly one review row per model slot (not one per chunk) — this preserves the 8.3 gate semantics and multi-model diversity requirement. Document the split strategy (chunk boundaries and per-chunk verdicts) in the Evidence Bundle.
+
 **Medium (no 🔴 files):** One `code-review` subagent:
 
 ```
